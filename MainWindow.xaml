@@ -1,0 +1,436 @@
+<Window x:Class="FireRescueCommand.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:FireRescueCommand.ViewModels"
+        Title="Straż pożarna - dyspozytor Laskowski" 
+        Height="950" Width="1500"
+        Background="#F5F5F7"
+        WindowStartupLocation="CenterScreen">
+    
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <!-- Vehicle Circle Style -->
+        <Style x:Key="VehicleCircle" TargetType="Ellipse">
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Margin" Value="3,0"/>
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="Stroke" Value="#E5E5EA"/>
+        </Style>
+
+        <!-- Button Style -->
+        <Style x:Key="ControlButton" TargetType="Button">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Panel: Map and Logs -->
+        <Grid Grid.Column="0" Margin="0,0,10,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2.2*"/>
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Map Area -->
+            <Border Grid.Row="0" Background="White" CornerRadius="12" 
+                    Padding="20" Margin="0,0,0,10">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Map Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,15">
+                        <TextBlock Text="Mapa Krakowa" FontSize="16" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Border Background="#FFE5E5" CornerRadius="6" Padding="10,5" Margin="5,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="8" Height="8" Fill="#FF9500" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding Events.Count, StringFormat='Zdarzenia ({0})'}" 
+                                               FontSize="12" Foreground="#FF9500"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#E5F3FF" CornerRadius="6" Padding="10,5" Margin="5,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="8" Height="8" Fill="#FF3B30" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding Stations.Count, StringFormat='Jednostki ({0})'}" 
+                                               FontSize="12" Foreground="#FF3B30"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Map Canvas -->
+                    <Border Grid.Row="1" Background="#F5F5F7" CornerRadius="8">
+                        <Canvas x:Name="MapCanvas">
+                            <!-- Stations will be drawn here -->
+                            <ItemsControl ItemsSource="{Binding Stations}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Border Background="#FF3B30" 
+                                                    BorderBrush="#CC0000" BorderThickness="2"
+                                                    Width="35" Height="35" CornerRadius="6"
+                                                    ToolTip="{Binding Name}">
+                                                <Path Data="M12 2L2 7v9c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" 
+                                                      Fill="White" Width="18" Height="18" 
+                                                      Stretch="Uniform"/>
+                                            </Border>
+                                            <!-- Station Number Label -->
+                                            <TextBlock Text="{Binding Name}" 
+                                                       FontSize="9" FontWeight="Bold"
+                                                       Foreground="#1C1C1E"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Bottom"
+                                                       Margin="0,0,0,-18"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style>
+                                        <Setter Property="Canvas.Left">
+                                            <Setter.Value>
+                                                <MultiBinding Converter="{StaticResource LongitudeToXConverter}">
+                                                    <Binding Path="Longitude"/>
+                                                    <Binding ElementName="MapCanvas" Path="ActualWidth"/>
+                                                </MultiBinding>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Canvas.Top">
+                                            <Setter.Value>
+                                                <MultiBinding Converter="{StaticResource LatitudeToYConverter}">
+                                                    <Binding Path="Latitude"/>
+                                                    <Binding ElementName="MapCanvas" Path="ActualHeight"/>
+                                                </MultiBinding>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                            </ItemsControl>
+
+                            <!-- Events will be drawn here -->
+                            <ItemsControl ItemsSource="{Binding Events}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#FF9500" 
+                                                BorderBrush="#FF6600" BorderThickness="2"
+                                                Width="40" Height="40" CornerRadius="20"
+                                                ToolTip="{Binding Type}">
+                                            <TextBlock Text="{Binding Id, StringFormat='#{0}'}" 
+                                                       FontSize="12" FontWeight="Bold"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center" 
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style>
+                                        <Setter Property="Canvas.Left">
+                                            <Setter.Value>
+                                                <MultiBinding Converter="{StaticResource LongitudeToXConverter}">
+                                                    <Binding Path="Longitude"/>
+                                                    <Binding ElementName="MapCanvas" Path="ActualWidth"/>
+                                                </MultiBinding>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Canvas.Top">
+                                            <Setter.Value>
+                                                <MultiBinding Converter="{StaticResource LatitudeToYConverter}">
+                                                    <Binding Path="Latitude"/>
+                                                    <Binding ElementName="MapCanvas" Path="ActualHeight"/>
+                                                </MultiBinding>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                            </ItemsControl>
+                        </Canvas>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- System Logs -->
+            <Border Grid.Row="1" Background="#1C1C1E" CornerRadius="12" Padding="20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="LOGI DYSPOZYTORKI" 
+                               FontSize="14" FontWeight="SemiBold" 
+                               Foreground="White" Margin="0,0,0,10"/>
+
+                    <!-- Legenda kolorów logów -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Border Background="#FF3B30" Width="12" Height="12" CornerRadius="2" Margin="0,0,5,0"/>
+                        <TextBlock Text="Zdarzenia" FontSize="10" Foreground="#8E8E93" Margin="0,0,15,0"/>
+                        
+                        <Border Background="#007AFF" Width="12" Height="12" CornerRadius="2" Margin="0,0,5,0"/>
+                        <TextBlock Text="Dysponowanie" FontSize="10" Foreground="#8E8E93" Margin="0,0,15,0"/>
+                        
+                        <Border Background="#34C759" Width="12" Height="12" CornerRadius="2" Margin="0,0,5,0"/>
+                        <TextBlock Text="System" FontSize="10" Foreground="#8E8E93"/>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Logs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Message}" 
+                                               Foreground="{Binding Color}"
+                                               FontFamily="Consolas" FontSize="11"
+                                               TextWrapping="Wrap" Margin="0,2"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Right Panel: Unit Status and Controls -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Unit Status -->
+            <Border Grid.Row="0" Background="White" CornerRadius="12" 
+                    Padding="20" Margin="0,0,0,10">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <TextBlock Grid.Row="0" Text="Status Pojazdów Jednostek" 
+                               FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                    <!-- Legenda kolorów pojazdów -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,15">
+                        <TextBlock Text="Stan pojazdu:" FontSize="11" FontWeight="SemiBold" 
+                                   Foreground="#8E8E93" Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Fill="#FF3B30" Width="12" Height="12" Margin="0,0,5,0"/>
+                            <TextBlock Text="Dostępny" FontSize="10" Foreground="#8E8E93"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Fill="#AF52DE" Width="12" Height="12" Margin="0,0,5,0"/>
+                            <TextBlock Text="W drodze do zdarzenia" FontSize="10" Foreground="#8E8E93"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Fill="#8E8E93" Width="12" Height="12" Margin="0,0,5,0"/>
+                            <TextBlock Text="Na miejscu zdarzenia" FontSize="10" Foreground="#8E8E93"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Fill="#FFCC00" Width="12" Height="12" Margin="0,0,5,0"/>
+                            <TextBlock Text="Powrót do jednostki" FontSize="10" Foreground="#8E8E93"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Stations List -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Stations}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#F5F5F7" CornerRadius="8" 
+                                            Padding="12" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Station Name and Status -->
+                                            <Grid Grid.Row="0">
+                                                <TextBlock Text="{Binding Name}" 
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="#1C1C1E"/>
+                                                <Border Background="{Binding StatusColor}" 
+                                                        CornerRadius="6" Padding="6,3"
+                                                        VerticalAlignment="Top"
+                                                        HorizontalAlignment="Right">
+                                                    <TextBlock Text="{Binding StatusText}" 
+                                                               FontSize="9" FontWeight="Bold" 
+                                                               Foreground="White"/>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Vehicle Status Circles -->
+                                            <ItemsControl Grid.Row="1" ItemsSource="{Binding Vehicles}" 
+                                                          Margin="0,8,0,0">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Width="22" Height="22" Margin="2">
+                                                            <Ellipse Fill="{Binding StateColor}" 
+                                                                     Style="{StaticResource VehicleCircle}"/>
+                                                            <TextBlock Text="{Binding DisplayEventId}" 
+                                                                       FontSize="7" FontWeight="Bold"
+                                                                       Foreground="White"
+                                                                       HorizontalAlignment="Center" 
+                                                                       VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Simulation Control -->
+            <Border Grid.Row="1" Background="White" CornerRadius="12" Padding="20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="15" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Title -->
+                    <TextBlock Grid.Row="0" Text="Przyciski kontrolne" 
+                               FontSize="16" FontWeight="SemiBold" 
+                               Margin="0,0,0,15"/>
+
+                    <!-- Control Buttons -->
+                    <Grid Grid.Row="1" Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" Content="▶ Start" 
+                                Background="#34C759" Foreground="White"
+                                Style="{StaticResource ControlButton}"
+                                Command="{Binding StartCommand}"/>
+                        
+                        <Button Grid.Column="1" Content="⏸ Stop" 
+                                Background="#FF3B30" Foreground="White"
+                                Style="{StaticResource ControlButton}"
+                                Command="{Binding StopCommand}"/>
+                        
+                        <Button Grid.Column="2" Content="↻ Reset" 
+                                Background="#8E8E93" Foreground="White"
+                                Style="{StaticResource ControlButton}"
+                                Command="{Binding ResetCommand}"/>
+                    </Grid>
+
+                    <!-- Speed Control -->
+                    <Grid Grid.Row="2" Margin="0,0,0,10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5">
+                            <TextBlock Text="Prędkość: " 
+                                       FontSize="12" Foreground="#8E8E93"/>
+                            <TextBlock Text="{Binding  SimSpeedText}" 
+                                       FontSize="12" FontWeight="Bold" Foreground="#007AFF"/>
+                        </StackPanel>
+                        
+                        <Grid Grid.Row="1">
+                            <Slider Value="{Binding SimSpeed}" 
+                                    Minimum="1" Maximum="5" 
+                                    TickFrequency="0.5" 
+                                    IsSnapToTickEnabled="True"
+                                    VerticalAlignment="Center"/>
+                            
+                            <StackPanel Orientation="Horizontal" 
+                                        HorizontalAlignment="Center">
+                                <TextBlock Text="1x" FontSize="10" 
+                                           Foreground="#8E8E93" Margin="5,0"/>
+                                <TextBlock Text="5x" FontSize="10" 
+                                           Foreground="#8E8E93" Margin="85,0,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <!-- Info o prędkości -->
+                    <Border Grid.Row="3" Background="#F5F5F7" CornerRadius="6" 
+                            Padding="10" Margin="0,5,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Informacja o prędkości" 
+                                       FontSize="10" FontWeight="SemiBold" 
+                                       Foreground="#007AFF" Margin="0,0,0,5"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="9" Foreground="#8E8E93">
+                                <Run Text="1x = zdarzenia co ~10 sek"/>
+                                <LineBreak/>
+                                <Run Text="2x = zdarzenia 2× szybciej"/>
+                                <LineBreak/>
+                                <Run Text="5x = zdarzenia 5× szybciej"/>
+                                <LineBreak/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

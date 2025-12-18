@@ -1,0 +1,10 @@
+<Application x:Class="FireRescueCommand.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:FireRescueCommand.Converters"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <converters:LongitudeToXConverter x:Key="LongitudeToXConverter"/>
+        <converters:LatitudeToYConverter x:Key="LatitudeToYConverter"/>
+    </Application.Resources>
+</Application>
